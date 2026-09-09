@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나의 가계부</title>
+
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+
+<body>
+
+<div class="container">
+
+    <header class="header">
+
+        <div>
+            <p class="subtitle">MY BUDGET BOOK</p>
+            <h1>나의 가계부</h1>
+            <p class="description">
+                수입과 지출을 한눈에 관리해보세요.
+            </p>
+        </div>
+
+        <button
+            class="btn btn-primary"
+            id="openModalBtn">
+            + 내역 추가
+        </button>
+
+    </header>
+
+
+    <!-- 요약 -->
+
+    <section class="summary">
+
+        <div class="summary-card income">
+            <span class="label">이번 달 수입</span>
+            <span class="value" id="incomeTotal">0원</span>
+        </div>
+
+        <div class="summary-card expense">
+            <span class="label">이번 달 지출</span>
+            <span class="value" id="expenseTotal">0원</span>
+        </div>
+
+        <div class="summary-card balance">
+            <span class="label">현재 잔액</span>
+            <span class="value" id="balanceTotal">0원</span>
+        </div>
+
+    </section>
+
+
+    <!-- 거래내역 -->
+
+    <section class="card">
+
+        <div class="section-header">
+
+            <div>
+                <h2>거래 내역</h2>
+                <p>등록된 수입과 지출을 확인하세요.</p>
+            </div>
+
+            <div class="filters">
+
+                <select id="typeFilter">
+                    <option value="all">전체</option>
+                    <option value="income">수입</option>
+                    <option value="expense">지출</option>
+                </select>
+
+                <select id="categoryFilter">
+                    <option value="all">전체 카테고리</option>
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>날짜</th>
+                        <th>유형</th>
+                        <th>카테고리</th>
+                        <th>내용</th>
+                        <th>금액</th>
+                        <th>관리</th>
+                    </tr>
+                </thead>
+
+                <tbody id="transactionList">
+
+                    <tr class="empty-row">
+                        <td colspan="6">
+                            등록된 내역이 없습니다.
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+
+<!-- 내역 추가 모달 -->
+
+<div
+    class="modal hidden"
+    id="transactionModal">
+
+    <div class="modal-background"></div>
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+
+            <div>
+                <p class="subtitle">TRANSACTION</p>
+                <h2>내역 추가</h2>
+            </div>
+
+            <button
+                class="close-btn"
+                id="closeModalBtn">
+                ×
+            </button>
+
+        </div>
+
+
+        <form id="transactionForm">
+
+
+            <!-- 유형 / 날짜 -->
+
+            <div class="form-row">
+
+                <div class="form-group">
+
+                    <label for="type">
+                        유형
+                    </label>
+
+                    <select
+                        id="type"
+                        name="type"
+                        required>
+
+                        <option value="expense">
+                            지출
+                        </option>
+
+                        <option value="income">
+                            수입
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="date">
+                        날짜
+                    </label>
+
+                    <input
+                        type="date"
+                        id="date"
+                        name="date"
+                        required>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- 카테고리 / 금액 -->
+
+            <div class="form-row">
+
+                <div class="form-group">
+
+                    <label for="category">
+                        카테고리
+                    </label>
+
+                    <select
+                        id="category"
+                        name="category"
+                        required>
+
+                        <option value="">
+                            선택해주세요
+                        </option>
+
+                        <option value="식비">
+                            식비
+                        </option>
+
+                        <option value="교통">
+                            교통
+                        </option>
+
+                        <option value="생활">
+                            생활
+                        </option>
+
+                        <option value="쇼핑">
+                            쇼핑
+                        </option>
+
+                        <option value="의료">
+                            의료
+                        </option>
+
+                        <option value="교육">
+                            교육
+                        </option>
+
+                        <option value="급여">
+                            급여
+                        </option>
+
+                        <option value="부수입">
+                            부수입
+                        </option>
+
+                        <option value="기타">
+                            기타
+                        </option>
+
+                        <option value="custom">
+                            직접 입력
+                        </option>
+
+                    </select>
+
+
+                    <!-- 직접 입력 -->
+
+                    <input
+                        type="text"
+                        id="customCategory"
+                        name="customCategory"
+                        class="hidden custom-category"
+                        placeholder="카테고리를 직접 입력하세요."
+                        maxlength="10">
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="amount">
+                        금액
+                    </label>
+
+                    <input
+                        type="number"
+                        id="amount"
+                        name="amount"
+                        min="1"
+                        step="1"
+                        placeholder="예: 10000"
+                        required>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- 내용 -->
+
+            <div class="form-group">
+
+                <label for="description">
+                    내용
+                </label>
+
+                <input
+                    type="text"
+                    id="description"
+                    name="description"
+                    maxlength="100"
+                    placeholder="예: 점심 식사"
+                    required>
+
+            </div>
+
+
+            <!-- 버튼 -->
+
+            <div class="form-buttons">
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    id="cancelBtn">
+                    취소
+                </button>
+
+                <button
+                    type="submit"
+                    class="btn btn-primary">
+                    저장하기
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
+<script src="/static/js/apps.js"></script>
+
+</body>
+</html>
