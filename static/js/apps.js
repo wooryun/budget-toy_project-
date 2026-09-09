@@ -679,6 +679,20 @@ document.addEventListener(
 );
 
 
+const response = await fetch("/api/transactions");
+
+const transactions = await response.json();
+
+async function fetchTransactions() {
+    GET /api/transactions
+    const response = await fetch("/api/transactions");
+    const transactions = await response.json();
+    state.transactions = transactions;
+    render();
+}
+
+loadTransactions();
+
 
 /*
 ========================================
