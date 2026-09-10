@@ -473,7 +473,7 @@ function render() {
 
 form.addEventListener(
     "submit",
-    event => {
+    async event => {
 
         event.preventDefault();
 
@@ -540,41 +540,44 @@ form.addEventListener(
         }
 
 
-        const transaction = {
-
-            id:
-                crypto.randomUUID(),
-
-            type:
-                formData.get("type"),
-
-            date:
-                formData.get("date"),
-
-            category:
-                category,
-
-            description:
-                formData.get(
-                    "description"
-                ),
-
-            amount:
-                amount
-
+        const payload = {
+            type: formData.get("type"),
+            date: formData.get("date"),
+            category,
+            description: formData.get("description").trim(),
+            amount
         };
 
+        const submitButton =
+            form.querySelector('button[type="submit"]');
 
-        state.transactions.unshift(
-            transaction
-        );
+        submitButton.disabled = true;
 
+        try {
+            const response = await fetch("/api/transactions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
 
-        render();
+            if (!response.ok) {
+                throw new Error("거래 내역 저장에 실패했습니다.");
+            }
 
-        resetForm();
+            const result = await response.json();
 
-        closeModal();
+            state.transactions.unshift(result.transaction);
+            render();
+            resetForm();
+            closeModal();
+        } catch (error) {
+            console.error(error);
+            alert(error.message);
+        } finally {
+            submitButton.disabled = false;
+        }
 
     }
 );
@@ -679,25 +682,23 @@ document.addEventListener(
 );
 
 
-const response = await fetch("/api/transactions");
-
-const transactions = await response.json();
-
 async function fetchTransactions() {
-    GET /api/transactions
-    const response = await fetch("/api/transactions");
-    const transactions = await response.json();
-    state.transactions = transactions;
-    render();
+    try {
+        const response = await fetch("/api/transactions");
+
+        if (!response.ok) {
+            throw new Error("거래 내역을 불러오지 못했습니다.");
+        }
+
+        state.transactions = await response.json();
+        render();
+    } catch (error) {
+        console.error(error);
+        alert(error.message);
+    }
 }
 
-loadTransactions();
+fetchTransactions();
 
+// 초기 데이터 로딩 시작
 
-/*
-========================================
-초기 실행
-========================================
-*/
-
-render();
