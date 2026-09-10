@@ -60,6 +60,62 @@ button {
 }
 
 
+/* 로그인 */
+
+.auth-panel {
+    width: min(480px, 100%);
+
+    margin: 120px auto 0;
+    padding: 42px 34px;
+
+    border: 1px solid var(--border);
+    border-radius: 22px;
+
+    background: var(--card);
+
+    text-align: center;
+
+    box-shadow: 0 14px 35px rgba(30, 40, 60, 0.08);
+}
+
+
+.auth-panel h1 {
+    margin: 0 0 12px;
+
+    font-size: 30px;
+    letter-spacing: -0.04em;
+}
+
+
+.auth-panel > p:not(.subtitle):not(.auth-error) {
+    margin: 0 0 24px;
+
+    color: var(--muted);
+    font-size: 14px;
+}
+
+
+.btn-google {
+    width: 100%;
+
+    background: #202124;
+    color: white;
+}
+
+
+.btn-google:hover {
+    background: #000000;
+}
+
+
+.auth-error {
+    margin: 16px 0 0;
+
+    color: var(--expense);
+    font-size: 13px;
+}
+
+
 /* Header */
 
 .header {
@@ -614,4 +670,18 @@ th {
 
 .custom-category {
     margin-top: 8px;
+}
+
+
+.header-actions,
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+.user-info {
+    color: var(--muted);
+    font-size: 13px;
 }

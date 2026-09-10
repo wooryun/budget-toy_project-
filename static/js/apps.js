@@ -2,6 +2,14 @@ const state = {
     transactions: []
 };
 
+const supabaseClient =
+    window.supabase.createClient(
+        window.SUPABASE_CONFIG.url,
+        window.SUPABASE_CONFIG.publishableKey
+    );
+
+let currentSession = null;
+
 
 const modal =
     document.getElementById("transactionModal");
@@ -44,6 +52,93 @@ const expenseTotal =
 
 const balanceTotal =
     document.getElementById("balanceTotal");
+
+const loginPanel =
+    document.getElementById("loginPanel");
+
+const appContent =
+    document.getElementById("appContent");
+
+const loginBtn =
+    document.getElementById("loginBtn");
+
+const logoutBtn =
+    document.getElementById("logoutBtn");
+
+const userInfo =
+    document.getElementById("userInfo");
+
+const userEmail =
+    document.getElementById("userEmail");
+
+const authError =
+    document.getElementById("authError");
+
+
+function authHeaders() {
+    if (!currentSession?.access_token) {
+        return {};
+    }
+
+    return {
+        Authorization:
+            `Bearer ${currentSession.access_token}`
+    };
+}
+
+
+function showAuthError(message) {
+    authError.textContent = message;
+    authError.classList.remove("hidden");
+}
+
+
+function updateAuthUi(session) {
+    currentSession = session;
+
+    const isSignedIn = Boolean(session);
+
+    loginPanel.classList.toggle("hidden", isSignedIn);
+    appContent.classList.toggle("hidden", !isSignedIn);
+    userInfo.classList.toggle("hidden", !isSignedIn);
+
+    userEmail.textContent =
+        session?.user?.email ?? "";
+
+    if (!isSignedIn) {
+        state.transactions = [];
+        render();
+    }
+}
+
+
+async function signInWithGoogle() {
+    authError.classList.add("hidden");
+
+    const { error } =
+        await supabaseClient.auth.signInWithOAuth({
+            provider: "google",
+            options: {
+                redirectTo: window.location.origin
+            }
+        });
+
+    if (error) {
+        console.error(error);
+        showAuthError("구글 로그인에 실패했습니다.");
+    }
+}
+
+
+async function signOut() {
+    const { error } =
+        await supabaseClient.auth.signOut();
+
+    if (error) {
+        console.error(error);
+        showAuthError("로그아웃에 실패했습니다.");
+    }
+}
 
 
 
@@ -477,6 +572,11 @@ form.addEventListener(
 
         event.preventDefault();
 
+        if (!currentSession) {
+            showAuthError("먼저 구글 로그인을 해주세요.");
+            return;
+        }
+
 
         const formData =
             new FormData(form);
@@ -557,7 +657,8 @@ form.addEventListener(
             const response = await fetch("/api/transactions", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    ...authHeaders()
                 },
                 body: JSON.stringify(payload)
             });
@@ -592,7 +693,7 @@ form.addEventListener(
 
 transactionList.addEventListener(
     "click",
-    event => {
+    async event => {
 
         const button =
             event.target.closest(
@@ -608,15 +709,30 @@ transactionList.addEventListener(
         const id =
             button.dataset.id;
 
-
-        state.transactions =
-            state.transactions.filter(
-                transaction =>
-                    transaction.id !== id
+        try {
+            const response = await fetch(
+                `/api/transactions/${encodeURIComponent(id)}`,
+                {
+                    method: "DELETE",
+                    headers: authHeaders()
+                }
             );
 
+            if (!response.ok) {
+                throw new Error("내역 삭제에 실패했습니다.");
+            }
 
-        render();
+            state.transactions =
+                state.transactions.filter(
+                    transaction =>
+                        String(transaction.id) !== id
+                );
+
+            render();
+        } catch (error) {
+            console.error(error);
+            alert(error.message);
+        }
 
     }
 );
@@ -684,9 +800,20 @@ document.addEventListener(
 
 async function fetchTransactions() {
     try {
-        const response = await fetch("/api/transactions");
+        if (!currentSession) {
+            return;
+        }
+
+        const response = await fetch("/api/transactions", {
+            headers: authHeaders()
+        });
 
         if (!response.ok) {
+            if (response.status === 401) {
+                await supabaseClient.auth.signOut();
+                throw new Error("로그인이 만료되었습니다.");
+            }
+
             throw new Error("거래 내역을 불러오지 못했습니다.");
         }
 
@@ -698,7 +825,54 @@ async function fetchTransactions() {
     }
 }
 
-fetchTransactions();
+loginBtn.addEventListener(
+    "click",
+    signInWithGoogle
+);
+
+
+logoutBtn.addEventListener(
+    "click",
+    signOut
+);
+
+
+supabaseClient.auth.onAuthStateChange(
+    (event, session) => {
+        updateAuthUi(session);
+
+        if (
+            session &&
+            event !== "SIGNED_OUT"
+        ) {
+            window.setTimeout(
+                fetchTransactions,
+                0
+            );
+        }
+    }
+);
+
+
+async function initializeAuth() {
+    const { data, error } =
+        await supabaseClient.auth.getSession();
+
+    if (error) {
+        console.error(error);
+        showAuthError("로그인 상태를 확인하지 못했습니다.");
+        return;
+    }
+
+    updateAuthUi(data.session);
+
+    if (data.session) {
+        await fetchTransactions();
+    }
+}
+
+
+initializeAuth();
 
 // 초기 데이터 로딩 시작
 
